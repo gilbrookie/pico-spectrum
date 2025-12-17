@@ -20,9 +20,12 @@ include(pico_sdk_import.cmake)
 
 project(pico_spectrum C CXX ASM)
 set(PICO_SDK_FETCH_FROM_GIT on)
-set(PICO_CMSIS_DSP ON)
+set(PICO_CMSIS_DSP OFF)
 
 pico_sdk_init()
+
+# Option to enable display test mode
+option(ENABLE_DISPLAY_TEST "Enable display test mode" OFF)
 
 add_executable(pico_spectrum
     src/main.c
@@ -45,8 +48,26 @@ target_link_libraries(pico_spectrum
     hardware_timer
 )
 
+
+# --- Include directories ---
+target_include_directories(pico_spectrum PRIVATE src)
+
+# --- Compiler warnings / options ---
+target_compile_options(pico_spectrum PRIVATE
+    -Wall
+    -Wextra
+    -Werror=implicit-function-declaration
+)
+
 pico_enable_stdio_usb(pico_spectrum 1)
 pico_enable_stdio_uart(pico_spectrum 0)
 
 pico_add_extra_outputs(pico_spectrum)
+
+# --- Preprocessor macro for display test ---
+if(ENABLE_DISPLAY_TEST)
+    message(STATUS "Building with DISPLAY_TEST enabled")
+    target_compile_definitions(pico_spectrum PRIVATE DISPLAY_TEST)
+endif()
+
 

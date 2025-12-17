@@ -9,16 +9,13 @@
 #include "debug_usb.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 static int16_t audio_out[256];
 static float mix = 0.7f;
 static bool bypass = false;
 
-// A struct to capture LED display modes
-typedef struct {
-    display_mode_t mode;
-    int frames;          // how many updates until done
-} display_test_t;
 
 
 // Run this on Core 1
@@ -41,42 +38,16 @@ void core1_entry() {
 int main() {
 
     stdio_init_all();
+    srand(time(NULL));   // seed random generator
     sleep_ms(1500);
 
     display_init();
 
-    printf("Display test sequence start\n");
-
-    display_init();
-
-    // each test will run for a specified number of frames
-    display_test_t tests[] = {
-        { DISPLAY_TEST_LINE,        16  },
-        { DISPLAY_TEST_COLUMN,      16  },
-        { DISPLAY_TEST_PIXEL,       256 },
-        { DISPLAY_TEST_CHECKERBOARD, 32 }, 
-        { DISPLAY_TEST_BRIGHTNESS,  182  },
-    };
-
-    const int test_count = sizeof(tests) / sizeof(tests[0]);
-    int test_index = 0;
-    int frame = 0;
-
-    while (true) {
-        display_update(tests[test_index].mode, NULL);
-        display_render();
-
-        frame++;
-        if (frame >= tests[test_index].frames) {
-            frame = 0;
-            test_index = (test_index + 1) % test_count;
-            printf("Switching to test %d\n", test_index);
-        }
-
-        sleep_ms(50);  // animation speed
-    }
-
-
+#ifdef DISPLAY_TEST
+    // run the display sequence for testing purposes
+    display_test();
+#else
+    // main app loop
     adc_init();
     adc_start_dma();
 
@@ -93,4 +64,6 @@ int main() {
 
         sleep_ms(30);
     }
+#endif
+    return 0;
 }
